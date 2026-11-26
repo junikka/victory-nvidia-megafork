@@ -64,8 +64,8 @@ $settings = @{
 # shaders, which are skipped. The screen-probe and visibility traces keep running: skipping those too left their
 # outputs as garbage (rainbow glitter everywhere).
 $rtList = Join-Path $PSScriptRoot 'rt_off_hashes.txt'
-if (-not $RayTracing -and (Test-Path $rtList)) {
-    $settings.VICTORY_SKIP_PIPELINES = (Get-Content $rtList -Raw).Trim()
+if (-not $RayTracing -and (Test-Path -LiteralPath $rtList -PathType Leaf)) {
+    $settings.VICTORY_SKIP_PIPELINES = (Get-Content -LiteralPath $rtList -Raw).Trim()
 }
 if ($Quality) {
     # Stretched/jumping bodies: relay stage 1 and no card steps (avatarmanz/VIctory-7900XTX issue 13,
@@ -79,7 +79,7 @@ $console = if ($SeriesX) { 'X' } else { 'S' }
 if ($Resolution) {
     if ([int]$Resolution -gt $outHeight) {
         Write-Host "Series $console outputs ${outHeight}p: ${Resolution}p is above it."
-        return
+        exit 1
     }
     $settings.VICTORY_RENDER_SCALE = ([int]$Resolution / $outHeight).ToString('0.####', [Globalization.CultureInfo]::InvariantCulture)
 }
@@ -101,13 +101,13 @@ $scale = [double]::Parse($settings.VICTORY_RENDER_SCALE, [Globalization.CultureI
 Write-Host "Series $console, rendering at $([int]($outHeight * $scale))p (render scale $($settings.VICTORY_RENDER_SCALE))"
 
 $victory = Join-Path $PSScriptRoot "..\target\$Build\victory.exe"
-if (-not (Test-Path $victory)) { Write-Host "No $victory. Build it first (README.md)."; return }
-if (-not (Test-Path $Exe)) { Write-Host "No $Exe."; return }
+if (-not (Test-Path -LiteralPath $victory -PathType Leaf)) { Write-Host "No $victory. Build it first (README.md)."; exit 1 }
+if (-not (Test-Path -LiteralPath $Exe -PathType Leaf)) { Write-Host "No $Exe."; exit 1 }
 if (-not $NoSmoothMotion) {
     # A copy under the name the NVIDIA App's Smooth Motion profile is set for, refreshed when the build changes.
     $sm = Join-Path (Split-Path $victory) 'victory_sm.exe'
-    if (-not (Test-Path $sm) -or (Get-Item $sm).LastWriteTime -lt (Get-Item $victory).LastWriteTime) {
-        Copy-Item $victory $sm -Force
+    if (-not (Test-Path -LiteralPath $sm -PathType Leaf) -or (Get-Item -LiteralPath $sm).LastWriteTime -lt (Get-Item -LiteralPath $victory).LastWriteTime) {
+        Copy-Item -LiteralPath $victory -Destination $sm -Force -ErrorAction Stop
     }
     $victory = $sm
 }
@@ -115,8 +115,14 @@ if (-not $NoSmoothMotion) {
 $paths = 'VICTORY_CONFIG', 'VICTORY_GAME_DIR', 'VICTORY_CACHE_DIR', 'VICTORY_DATA_DIR'
 Get-ChildItem Env:VICTORY_* | Where-Object { $_.Name -notin $paths } | ForEach-Object { Remove-Item "Env:$($_.Name)" }
 foreach ($k in $settings.Keys) { Set-Item "Env:$k" $settings[$k] }
-$Exe = (Resolve-Path $Exe).Path
+$Exe = (Resolve-Path -LiteralPath $Exe).Path
 $runArgs = @('run', $Exe, '--execute')
 if (-not $SeriesX) { $runArgs += @('--console', 'series-s') }
-Push-Location (Join-Path $PSScriptRoot '..')   # victory.toml is looked for here
-try { & $victory @runArgs } finally { Pop-Location }
+Push-Location -LiteralPath (Join-Path $PSScriptRoot '..')   # victory.toml is looked for here
+try {
+    & $victory @runArgs
+    $exitCode = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+exit $exitCode
