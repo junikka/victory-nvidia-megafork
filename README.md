@@ -1,16 +1,13 @@
 # Victory NVIDIA Megafork
 
-This private development line starts from trustno1-coder's NVIDIA fork. The
-[NVIDIA testing guide](NVIDIA-TESTING.md) covers the chosen base, launch profiles,
-upstream credits and the plan for sharing fixes with the AMD megafork.
+Victory NVIDIA Megafork is an experimental Windows compatibility layer for user-supplied Xbox Series X|S titles. It starts from trustno1-coder's NVIDIA tuning and adds the shared pipeline recovery fix and the Windows 10 Direct3D 12 runtime setup. The retained performance measurements come from the upstream NVIDIA branch.
+
+[Build and first launch](#how-to-run-it) · [Windows 10 setup](#windows-10-setup) · [NVIDIA testing guide](NVIDIA-TESTING.md) · [Credits](#credits) · [AMD megafork](https://github.com/rorodev6/victory-amd-megafork-private)
+
 
 ## Built from many projects
 
-This repository did not come from one place. Over several weeks we built, ran
-and measured the work of many projects on the same NVIDIA machine, kept what
-worked on this card, and brought the best of each together here. No single one
-of them runs this well on NVIDIA by itself; the combination is what gets it to
-where it is now.
+The NVIDIA base carries changes from several VIctory branches. Its maintainers tested combinations of renderer and launch settings on an RTX 5070. This megafork keeps the sources and upstream measurements below for comparison.
 
 Code that is in this repository:
 
@@ -225,26 +222,62 @@ What is known to be wrong:
   plants outdoors, textures appearing late while the title streams, a stutter on
   the first run with a new driver or build).
 
+## Requirements
+
+- Windows 11 x64 or Windows 10 22H2 x64 (build 19045) for the Windows 10 setup below. Run `winver` to check the version.
+- An x64 CPU with AVX2 and a Direct3D 12 GPU with Shader Model 6.6 and mesh shader support. Use a current driver that supports your GPU and Windows version.
+- Rust via rustup, the MSVC C++ build tools, and a Windows SDK. Cargo selects the Rust version pinned by the repository.
+- Your own title files in a folder outside the clone. Keep local configuration, game files, generated shader caches, and saves out of Git.
+
 ## How to run it
 
-You need Windows 10/11 x64, a CPU with AVX2, a Direct3D 12 GPU with shader
-model 6.6 and mesh shaders, Rust (the toolchain is pinned), the MSVC build
-tools, and your own dump of the title.
+Clone with an account that can access the private repository. Set your paths in the local `victory.toml` before launching.
 
 ```powershell
-git clone https://github.com/trustno1-coder/VIctory-NVIDIA
-cd VIctory-NVIDIA
-copy victory.example.toml victory.toml      # then set your paths, outside this folder
-cargo build --locked --profile diag -p victory --features diagnostics
-scripts\play-nvidia.ps1 -Exe <path of your copy's executable>
+git clone https://github.com/rorodev6/victory-nvidia-megafork-private.git
+Set-Location victory-nvidia-megafork-private
+Copy-Item .\victory.example.toml .\victory.toml
 ```
 
-`scripts\play-nvidia.ps1` starts a copy of the build named `victory_sm.exe`, so
-NVIDIA Smooth Motion applies every time once it is turned on for that exe in the
-NVIDIA App. `-NoSmoothMotion` runs `victory.exe` itself; `-SeriesX` uses the
-Series X profile (sharper, much slower); `-Quality` gives fewer stretched bodies
-and less rainbow skin for about 7 fps. The fork's own `scripts\play.ps1` is
-still there for AMD cards.
+On Windows 10, follow the [SDK setup](#windows-10-setup) first. From the root of the clone:
+
+```powershell
+cargo build --locked --profile diag -p victory --features diagnostics
+.\scripts\play-nvidia.ps1 -Exe 'D:\Games\Example\game.exe' -Quality -Resolution 720 -NoSmoothMotion
+```
+
+| Preset or switch | What it changes |
+| --- | --- |
+| `-Quality` | Keeps texture synchronization and uses conservative relay settings. Start here if faces or geometry look wrong. |
+| Default | Series S at 540p internal resolution, upscaled to 1080p. Faster submission settings can introduce visual glitches. |
+| `-SeriesX` | Raises the output to 4K and defaults to 1080p internal rendering. The upstream tests reported lower frame rates. |
+| `-NoSmoothMotion` | Launches `victory.exe` directly. Use it to measure rendered FPS or to isolate driver frame generation. |
+| `-Adapter` | Selects a GPU by name or index. Check the adapter reported in the runtime log. |
+
+By default the launcher copies the build to `victory_sm.exe` beside the original. NVIDIA Smooth Motion uses a profile for this executable on supported GPU, driver, and OS combinations. It generates display frames between rendered frames. Record those separately from rendered FPS. Both executables use the same adjacent `D3D12` folder.
+
+## Windows 10 setup
+
+Windows 10's built-in Direct3D 12 runtime can stop at Shader Model 6.5. Victory needs Shader Model 6.6 to use direct descriptor heap indexing. The Windows 10 build uses Microsoft's app-local [D3D12 Agility SDK](https://devblogs.microsoft.com/directx/gettingstarted-dx12agility/).
+
+From the repository root, install the SDK before building the executable:
+
+```powershell
+cargo xtask agility
+cargo build --locked --profile diag -p victory --features diagnostics
+.\target\diag\victory.exe config
+```
+
+`cargo xtask agility` downloads `Microsoft.Direct3D.D3D12` 1.620.2 from NuGet, checks its SHA-512, and extracts the x64 DLLs into `target\diag\D3D12\` and the corresponding `debug` and `release` folders. It requires an internet connection on the first run. The DLLs stay in the build directory. No administrator access is needed.
+
+Check that `victory.exe config` reports `app-local SDK 620` and shows the path to `D3D12Core.dll`. If you move the executable, move its `D3D12` folder with it. An existing executable needs a rebuild after installing the SDK. On Windows 11 the SDK step is optional. If the DLL disappears from a build directory, rebuild before starting the executable from that directory again.
+
+The Agility SDK build path has been checked on Windows 11. In-game validation on Windows 10 is pending. The Agility SDK still requires GPU and driver support for the features above.
+
+The implementation comes from [rorodev6/victory](https://github.com/rorodev6/victory/commit/bdd68c2), based on [domints' Agility SDK change](https://github.com/fxceless/victory-fork/pull/402).
+
+## Tuning the NVIDIA build
+
 
 ### Picking a resolution
 
@@ -342,6 +375,20 @@ Commands, debugging switches and upstream's own description:
 [docs/README-fxceless.md](docs/README-fxceless.md). Every `VICTORY_...` switch is
 described in a comment where it is read.
 
+## Troubleshooting and benchmark reports
+
+| Symptom | What to check |
+| --- | --- |
+| Shader Model 6.5 or `D3D12_ERROR_INVALID_REDIST` | Run the SDK setup and check `victory.exe config`. Keep the `D3D12` folder next to both executables and verify Shader Model 6.6 support in your driver. |
+| Black loading screens or missing faces | Start with `-Quality -Resolution 720 -NoSmoothMotion` on Series S. Record where the issue begins and whether it repeats with a warm cache. |
+| Brief stalls on entering a new scene | Pipeline creation can delay a draw on first use. Compare a second run with the same settings, driver, and cache. |
+| Falling FPS, high VRAM, or `0x8007000E` | Check the adapter, dedicated and shared GPU memory, and the RAM guidance [above](#picking-a-resolution). Compare the same scene at a lower internal resolution. |
+
+Use `.\target\diag\victory.exe config` to see the resolved file paths. Cache and saves use separate directories (by default `%LOCALAPPDATA%\victory\cache` and `%LOCALAPPDATA%\victory\data`). Set `VICTORY_CACHE_DIR` and `VICTORY_DATA_DIR` to paths outside the clone to give each build its own cache and saves.
+
+For a reproducible report, include the Windows build, CPU, GPU, driver, RAM, commit, profile, internal and output resolution, and cache state. Capture the same close-up and city route in each build. Count rendering defects, peak VRAM, median and p95 frame times, and any device loss. Measure with `-NoSmoothMotion` first. See the [NVIDIA testing guide](NVIDIA-TESTING.md).
+
+
 ## What is different here
 
 This fork's own changes are listed at the top of this README. Everything the
@@ -356,6 +403,7 @@ fills done on the card, textures on their own copy queue, texture read-back
 This is a tree of other people's work with more on top. The history is kept, and
 commits taken from elsewhere name the commit and its author.
 
+- **[trustno1-coder/VIctory-NVIDIA](https://github.com/trustno1-coder/VIctory-NVIDIA)**: the NVIDIA base, launch scripts, and RTX 5070 benchmarks.
 - **[avatarmanz/VIctory-7900XTX](https://github.com/avatarmanz/VIctory-7900XTX)**:
   the fork this one started from, and everything in it.
 - **[VIctory](https://github.com/Marvisak/VIctory)** by Marvisak and its
@@ -377,6 +425,8 @@ commits taken from elsewhere name the commit and its author.
 - **Geckomacabre** and **cxy0072019-sketch**: the texture read-back.
 - **[XCL](https://github.com/xcl-dev/xcl)** (GPL-2.0-only) was read for how the same
   title behaves under another layer; no code of it is here.
+- **[Filip722](https://github.com/Filip722)**: [pipeline job recovery](https://github.com/fxceless/victory-fork/pull/1353) adapted from fxceless.
+- **[domints](https://github.com/domints)** and **[rorodev6](https://github.com/rorodev6)**: the upstream Agility SDK change and the public Victory port used here.
 - This fork's changes were made with [Claude Code](https://claude.com/claude-code).
 
 ## License

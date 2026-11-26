@@ -8,7 +8,7 @@ Cool Fox `30e54b4` is a valuable reference for texture synchronization and frame
 
 ## First run
 
-Use the pinned Rust toolchain and the MSVC C++ build tools with a Windows SDK. Build a diagnostics executable and start with the upstream Quality preset at 720p internal resolution. The runtime uses your own game files.
+Use the pinned Rust toolchain and the MSVC C++ build tools with a Windows SDK. On Windows 10, follow the [Agility SDK setup](README.md#windows-10-setup) before building. Build a diagnostics executable and start with the upstream Quality preset at 720p internal resolution. The runtime uses your own game files.
 
 ```powershell
 cargo build --locked --profile diag -p victory --features diagnostics
