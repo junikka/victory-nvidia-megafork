@@ -19,6 +19,6 @@ Compare against the same command without `-Quality` after establishing the basel
 
 ## Sharing code with the AMD megafork
 
-The NVIDIA line and the [AMD line](https://github.com/rorodev6/victory-amd-megafork-private) have a common ancestor (`0a435665`), but their renderers have diverged. Port focused patches and run the appropriate tests on each base. Maintain separate launch defaults for shader wave execution, descriptor budgets and upscaling. Compare related fixes on both GPUs before treating them as cross-vendor defaults.
+The NVIDIA line and the [AMD line](https://github.com/rorodev6/victory-megafork-amd) have a common ancestor (`0a435665`), but their renderers have diverged. Port focused patches and run the appropriate tests on each base. Maintain separate launch defaults for shader wave execution, descriptor budgets and upscaling. Compare related fixes on both GPUs before treating them as cross-vendor defaults.
 
 The first shared fix is [Filip722's pipeline job completion change from fxceless](https://github.com/fxceless/victory-fork/pull/1353). It completes a failed job after a Rust panic and wakes waiters. This is a defensive recovery for Rust errors. Driver resets still need separate diagnosis. The Git history retains upstream authorship and the [README credits](README.md#credits) retain the project's upstream acknowledgements.
