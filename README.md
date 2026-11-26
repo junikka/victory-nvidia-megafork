@@ -1,4 +1,8 @@
-# VIctory on NVIDIA
+# Victory NVIDIA Megafork
+
+This private development line starts from trustno1-coder's NVIDIA fork. The
+[NVIDIA testing guide](NVIDIA-TESTING.md) covers the chosen base, launch profiles,
+upstream credits and the plan for sharing fixes with the AMD megafork.
 
 ## Built from many projects
 
