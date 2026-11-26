@@ -2,7 +2,7 @@
 
 Victory NVIDIA Megafork is an experimental Windows compatibility layer for user-supplied Xbox Series X|S titles. It starts from trustno1-coder's NVIDIA tuning and adds the shared pipeline recovery fix and the Windows 10 Direct3D 12 runtime setup. The retained performance measurements come from the upstream NVIDIA branch.
 
-[Build and first launch](#how-to-run-it) · [Windows 10 setup](#windows-10-setup) · [NVIDIA testing guide](NVIDIA-TESTING.md) · [Credits](#credits) · [AMD megafork](https://github.com/rorodev6/victory-amd-megafork-private)
+[Agent setup guide](AGENTS.md) · [Build and first launch](#how-to-run-it) · [Windows 10 setup](#windows-10-setup) · [NVIDIA testing guide](NVIDIA-TESTING.md) · [Credits](#credits) · [AMD megafork](https://github.com/rorodev6/victory-amd-megafork-private)
 
 
 ## Built from many projects
