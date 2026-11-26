@@ -152,9 +152,12 @@ RTX 5070 12 GB with a Ryzen 7 9800X3D, in the prologue:
 
 ### Settings
 
-The default set of `play-nvidia.ps1` is the speed set (about 18-22 fps on the
-RTX 5070). `-Quality` trades about 7 fps for fewer of the first two faults
+The upstream speed preset measured about 18–22 FPS on the RTX 5070. The current
+launchers default to `VICTORY_THIN=0` following NVIDIA whiteout reports. To
+compare with deferred command-list recording enabled, pass `-More @{VICTORY_THIN='1'}`.
+`-Quality` also changes relay and texture waits to reduce the first two defects
 below.
+
 
 | Fault | Cause | Fix |
 |---|---|---|
@@ -380,6 +383,7 @@ described in a comment where it is read.
 | Symptom | What to check |
 | --- | --- |
 | Shader Model 6.5 or `D3D12_ERROR_INVALID_REDIST` | Run the SDK setup and check `victory.exe config`. Keep the `D3D12` folder next to both executables and verify Shader Model 6.6 support in your driver. |
+| White 3D scene with visible HUD or minimap | Both launchers default to `VICTORY_THIN=0` following [NVIDIA whiteout reports](https://github.com/avatarmanz/VIctory-7900XTX/issues/112). Use the diagnostics build and `play-nvidia.ps1`. If the problem persists, include the GPU, driver, exact launch command and where the view turns white. |
 | Black loading screens or missing faces | Start with `-Quality -Resolution 720 -NoSmoothMotion` on Series S. Record where the issue begins and whether it repeats with a warm cache. |
 | Brief stalls on entering a new scene | Pipeline creation can delay a draw on first use. Compare a second run with the same settings, driver, and cache. |
 | Falling FPS, high VRAM, or `0x8007000E` | Check the adapter, dedicated and shared GPU memory, and the RAM guidance [above](#picking-a-resolution). Compare the same scene at a lower internal resolution. |

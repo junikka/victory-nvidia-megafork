@@ -35,7 +35,8 @@ $settings = @{
     VICTORY_JOIN_COPIES = '1'; VICTORY_INDIRECT_WINDOW = '1'; VICTORY_RELAY_COPY = '1'
     VICTORY_INDIRECT_BATCH = '2'; VICTORY_MAP_THREADS = '1'; VICTORY_TITLE_PRIORITIES = '0'; VICTORY_CARD_AWAKE = '1'
     VICTORY_SHOW_AFTER = '1'; VICTORY_AMBIENT = '0.8'; VICTORY_D3D12_DRED = 'light'; VICTORY_SKIP_PIPELINES = 'none'
-    VICTORY_THIN = '1'; VICTORY_JOIN_PARTS = '8'; VICTORY_UPLOAD_AHEAD = '1'
+    # Deferred list recording can wash out the whole 3D scene on NVIDIA (7900XTX fork issues #112 and #62).
+    VICTORY_THIN = '0'; VICTORY_JOIN_PARTS = '8'; VICTORY_UPLOAD_AHEAD = '1'
     # Cheap picture fixes, on in both sets:
     # - Overbright views: without rays the light probes keep the sky's light indoors. The fog is bounded by 1.5 times
     #   the light around, and what the title left by 2 times the estimate (was 4; ambient.rs).
